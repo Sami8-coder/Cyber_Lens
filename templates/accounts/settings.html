@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Settings & API — CyberLens{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <!-- API Token Card -->
+        <div class="cl-card mb-4">
+            <div class="cl-card-header">
+                <h5 class="mb-0 fw-bold">CyberLens API Access Token</h5>
+            </div>
+            <div class="cl-card-body">
+                <p class="text-muted small">
+                    Use your personal API token to automate posture assessments via CLI, CI/CD pipelines, or Python scripts.
+                    Never share your secret token in public repositories.
+                </p>
+
+                <label class="form-label fw-semibold small text-navy">Current Active API Key</label>
+                <div class="input-group mb-3">
+                    <input type="text" id="apiKeyInput" class="form-control font-monospace bg-light" value="{{ profile.api_key }}" readonly>
+                    <button class="btn btn-outline-secondary copy-btn" type="button" data-copy-text="{{ profile.api_key }}">
+                        <i class="bi bi-clipboard"></i> Copy Key
+                    </button>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                    <span class="text-muted small">Need to invalidate this key?</span>
+                    <form method="post" action="{% url 'accounts:regenerate_api_key' %}" onsubmit="return confirm('Are you sure you want to regenerate your API Key? Any existing script integrations using the current key will stop working.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Regenerate API Key
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automation CLI / Code Snippet -->
+        <div class="cl-card mb-4">
+            <div class="cl-card-header">
+                <h5 class="mb-0 fw-bold">CLI / CI-CD Integration Example</h5>
+            </div>
+            <div class="cl-card-body">
+                <p class="text-muted small">
+                    Trigger an automated passive posture scan via HTTP API using <code>curl</code>:
+                </p>
+                <div class="remediation-code-box">
+                    <button class="copy-snippet-btn copy-btn" data-target="curlExampleCode"><i class="bi bi-clipboard"></i> Copy</button>
+                    <pre id="curlExampleCode" class="mb-0"><code>curl -X POST https://cyberlens.local/scans/api/quick-scan/ \
+  -H "Authorization: Bearer {{ profile.api_key }}" \
+  -d "url=https://example.com"</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scan Preferences -->
+        <div class="cl-card">
+            <div class="cl-card-header">
+                <h5 class="mb-0 fw-bold">Assessment Preferences</h5>
+            </div>
+            <div class="cl-card-body">
+                <form method="post" action="{% url 'accounts:settings' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-navy">Default Assessment Depth</label>
+                        {{ form.default_scan_depth }}
+                    </div>
+
+                    <div class="mb-4 form-check">
+                        {{ form.notification_email }}
+                        <label class="form-check-label small fw-semibold text-navy">
+                            Send summary email notifications on high-severity findings
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary-cl">Save Preferences</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

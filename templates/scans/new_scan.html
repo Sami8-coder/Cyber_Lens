@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Launch New Security Assessment — CyberLens{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- New Assessment Card -->
+        <div class="cl-card p-4 p-md-5 mb-4 shadow-sm">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex p-3 rounded-circle bg-primary-subtle text-primary mb-2">
+                    <i class="bi bi-shield-check fs-2"></i>
+                </div>
+                <h3 class="fw-bold text-navy">New Web Security Posture Audit</h3>
+                <p class="text-muted small">
+                    Perform a safe, passive multi-layered security assessment on a target website.
+                </p>
+            </div>
+
+            <form method="post" action="{% url 'scans:new_scan' %}" class="cyberlens-scan-form">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="alert alert-danger small p-3 mb-4">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    {% for field, errors in form.errors.items %}
+                        <span><strong>{{ field|title }}:</strong> {{ errors|striptags }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-navy">Target Website or Hostname <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light text-muted"><i class="bi bi-globe2"></i></span>
+                        {{ form.target_url }}
+                    </div>
+                    <div class="form-text small mt-1">
+                        Examples: <code>example.com</code>, <code>https://my-app.io</code>, <code>subdomain.org</code>.
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small text-navy">Assessment Profile</label>
+                        {{ form.scan_depth }}
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check p-3 bg-light rounded-3 border w-100 mb-0">
+                            {{ form.is_public }}
+                            <label class="form-check-label small fw-semibold text-navy ms-1" for="id_is_public">
+                                Public Report (Shareable via link)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-primary-cl btn-lg py-3">
+                        <i class="bi bi-shield-lock me-2"></i> Launch Assessment
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Safety & Methodology Guarantee -->
+        <div class="cl-card p-4 bg-light border-0">
+            <h6 class="fw-bold text-navy mb-2"><i class="bi bi-shield-shaded text-primary me-2"></i>CyberLens Passive Security Policy</h6>
+            <div class="row g-3 text-muted small">
+                <div class="col-sm-6">
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-1">
+                        <li><i class="bi bi-check2 text-success me-1"></i> Strictly passive HTTP header inspection</li>
+                        <li><i class="bi bi-check2 text-success me-1"></i> X.509 TLS certificate handshake validation</li>
+                        <li><i class="bi bi-check2 text-success me-1"></i> Public DNS (SPF, DMARC, CAA) query analysis</li>
+                    </ul>
+                </div>
+                <div class="col-sm-6">
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-1">
+                        <li><i class="bi bi-shield-slash text-danger me-1"></i> <strong>Zero exploitation:</strong> No SQLi or XSS injection</li>
+                        <li><i class="bi bi-shield-slash text-danger me-1"></i> <strong>Zero brute-force:</strong> No denial of service</li>
+                        <li><i class="bi bi-check2 text-success me-1"></i> Full SSRF & private IP network protection</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

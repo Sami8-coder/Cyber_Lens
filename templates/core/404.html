@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}404 - Page Not Found — CyberLens{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 text-center">
+        <div class="cl-card p-5">
+            <div class="display-1 fw-bold text-navy mb-3">404</div>
+            <h3 class="fw-bold mb-2">Resource Not Located</h3>
+            <p class="text-muted mb-4">
+                The requested URL or security assessment record could not be found or may have been deleted.
+            </p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'dashboard:index' %}" class="btn btn-primary-cl">Go to Dashboard</a>
+                <a href="{% url 'core:home' %}" class="btn btn-outline-secondary">Return Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

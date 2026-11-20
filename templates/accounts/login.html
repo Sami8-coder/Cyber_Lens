@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign In — CyberLens{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-5 col-lg-4">
+        <div class="cl-card p-4 p-md-5 shadow-sm">
+            <div class="text-center mb-4">
+                <img src="{% static 'img/logo.svg' %}" alt="CyberLens" width="48" height="48" class="mb-2">
+                <h3 class="fw-bold text-navy">Welcome Back</h3>
+                <p class="text-muted small">Sign in to your CyberLens security console</p>
+            </div>
+
+            <form method="post" action="{% url 'accounts:login' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-navy">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
+                        <input type="text" name="username" class="form-control" placeholder="Enter username" required autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label fw-semibold small text-navy mb-0">Password</label>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
+                        <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+                    </div>
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-primary-cl py-2">Sign In</button>
+                </div>
+
+                <div class="text-center small text-muted">
+                    Don't have an account? <a href="{% url 'accounts:register' %}" class="fw-semibold">Create an account</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

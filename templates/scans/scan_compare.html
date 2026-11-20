@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Posture Comparison — CyberLens{% endblock %}
+
+{% block content %}
+<div class="cl-card mb-4">
+    <div class="cl-card-header">
+        <h5 class="mb-0 fw-bold text-navy">Side-by-Side Posture Comparison</h5>
+        <small class="text-muted">Compare security metrics across two assessments or track remediation progress</small>
+    </div>
+
+    <!-- Selector Form -->
+    <div class="cl-card-body border-bottom bg-light">
+        <form method="get" action="{% url 'scans:scan_compare' %}" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label fw-semibold small text-navy">Baseline Assessment (Scan 1)</label>
+                <select name="scan1" class="form-select" required>
+                    <option value="">Select Baseline Scan...</option>
+                    {% for s in available_scans %}
+                        <option value="{{ s.scan_uuid }}" {% if scan1 and scan1.scan_uuid == s.scan_uuid %}selected{% endif %}>
+                            {{ s.target_hostname }} &bull; Score: {{ s.overall_score }} ({{ s.grade }}) &bull; {{ s.created_at|date:"M d, Y" }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-5">
+                <label class="form-label fw-semibold small text-navy">Comparison Assessment (Scan 2)</label>
+                <select name="scan2" class="form-select" required>
+                    <option value="">Select Comparison Scan...</option>
+                    {% for s in available_scans %}
+                        <option value="{{ s.scan_uuid }}" {% if scan2 and scan2.scan_uuid == s.scan_uuid %}selected{% endif %}>
+                            {{ s.target_hostname }} &bull; Score: {{ s.overall_score }} ({{ s.grade }}) &bull; {{ s.created_at|date:"M d, Y" }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary-cl w-100">Compare</button>
+            </div>
+        </form>
+    </div>
+
+    {% if scan1 and scan2 %}
+    <div class="cl-card-body">
+        <!-- Delta Banner -->
+        <div class="p-3 rounded-3 mb-4 text-center {% if comparison.score_diff > 0 %}bg-success-subtle text-success border border-success{% elif comparison.score_diff < 0 %}bg-danger-subtle text-danger border border-danger{% else %}bg-secondary-subtle text-secondary border{% endif %}">
+            <span class="fs-5 fw-bold">
+                {% if comparison.score_diff > 0 %}
+                    <i class="bi bi-arrow-up-circle-fill me-1"></i> Posture Improved by +{{ comparison.score_diff }} points!
+                {% elif comparison.score_diff < 0 %}
+                    <i class="bi bi-arrow-down-circle-fill me-1"></i> Posture Degraded by {{ comparison.score_diff }} points.
+                {% else %}
+                    <i class="bi bi-dash-circle-fill me-1"></i> Posture Score is Unchanged.
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- Side by Side Executive Cards -->
+        <div class="row g-4 mb-4">
+            <!-- Scan 1 -->
+            <div class="col-md-6">
+                <div class="p-4 bg-light rounded-4 border text-center h-100">
+                    <span class="badge bg-secondary mb-2">Scan 1 (Baseline)</span>
+                    <h4 class="fw-bold text-navy mb-1">{{ scan1.target_hostname }}</h4>
+                    <div class="text-muted small mb-3">{{ scan1.created_at|date:"M d, Y H:i" }}</div>
+                    <div class="display-3 fw-bold text-navy mb-1">{{ scan1.overall_score }}<span class="fs-4 text-muted">/100</span></div>
+                    <div class="badge-grade badge-grade-lg {{ scan1.grade_badge_class }} mb-2">{{ scan1.grade }}</div>
+                    <div><span class="badge {{ scan1.risk_badge_class }}">{{ scan1.risk_level }} Risk</span></div>
+                </div>
+            </div>
+
+            <!-- Scan 2 -->
+            <div class="col-md-6">
+                <div class="p-4 bg-light rounded-4 border text-center h-100">
+                    <span class="badge bg-primary mb-2">Scan 2 (Comparison)</span>
+                    <h4 class="fw-bold text-navy mb-1">{{ scan2.target_hostname }}</h4>
+                    <div class="text-muted small mb-3">{{ scan2.created_at|date:"M d, Y H:i" }}</div>
+                    <div class="display-3 fw-bold text-navy mb-1">{{ scan2.overall_score }}<span class="fs-4 text-muted">/100</span></div>
+                    <div class="badge-grade badge-grade-lg {{ scan2.grade_badge_class }} mb-2">{{ scan2.grade }}</div>
+                    <div><span class="badge {{ scan2.risk_badge_class }}">{{ scan2.risk_level }} Risk</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Comparison Table -->
+        <h5 class="fw-bold text-navy mb-3">Domain Category Deltas</h5>
+        <div class="table-responsive">
+            <table class="cl-table">
+                <thead>
+                    <tr>
+                        <th>Security Domain</th>
+                        <th class="text-center">Scan 1 Score</th>
+                        <th class="text-center">Scan 2 Score</th>
+                        <th class="text-center">Delta Difference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in comparison.categories %}
+                    <tr>
+                        <td class="fw-semibold text-navy">{{ cat.name }}</td>
+                        <td class="text-center font-monospace">{{ cat.score1 }} / 100</td>
+                        <td class="text-center font-monospace">{{ cat.score2 }} / 100</td>
+                        <td class="text-center font-monospace">
+                            {% if cat.diff > 0 %}
+                                <span class="badge bg-success">+{{ cat.diff }}</span>
+                            {% elif cat.diff < 0 %}
+                                <span class="badge bg-danger">{{ cat.diff }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">0</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="p-5 text-center text-muted">
+        <i class="bi bi-arrow-left-right fs-1 mb-3 d-block text-primary"></i>
+        <h6>Select Two Assessments to Compare</h6>
+        <p class="small mb-0">Choose a baseline scan and a comparison scan above to visualize score improvements or differences.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

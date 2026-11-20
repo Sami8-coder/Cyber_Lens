@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}About CyberLens — Architecture & Engineering Overview{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Title Banner -->
+        <div class="cl-card p-4 p-md-5 mb-4 bg-navy text-white">
+            <span class="badge bg-info text-dark fw-bold mb-2">CSE Web Engineering Project</span>
+            <h1 class="display-6 fw-bold text-white mb-2">About CyberLens</h1>
+            <p class="lead text-light opacity-75 mb-0">
+                An Explainable Web Security Posture Assessment and Reporting Platform.
+            </p>
+        </div>
+
+        <div class="cl-card p-4 p-md-5 mb-4">
+            <h3 class="fw-bold mb-3">Project Philosophy: Explainable Defense</h3>
+            <p class="text-muted">
+                Traditional web vulnerability scanners frequently overwhelm engineers and system administrators with opaque risk scores,
+                cryptic jargon, or intrusive attack payloads that risk service disruptions.
+            </p>
+            <p class="text-muted">
+                <strong>CyberLens</strong> was designed from the ground up on the principle of <em>Explainable Posture Auditing</em>:
+            </p>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="border rounded-3 p-3 bg-light h-100">
+                        <div class="fw-bold text-navy mb-1"><i class="bi bi-search text-primary me-1"></i> Transparent Assessment</div>
+                        <div class="small text-muted">Clear visibility into exactly what technical attribute was observed in headers, certificates, or DNS.</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border rounded-3 p-3 bg-light h-100">
+                        <div class="fw-bold text-navy mb-1"><i class="bi bi-shield-slash text-danger me-1"></i> Threat Context</div>
+                        <div class="small text-muted">Explanation of attacker exploitation vectors, mapped to OWASP Top 10 (2021) and MITRE CWE categories.</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border rounded-3 p-3 bg-light h-100">
+                        <div class="fw-bold text-navy mb-1"><i class="bi bi-code-slash text-success me-1"></i> Copyable Fixes</div>
+                        <div class="small text-muted">Direct copy-paste remediation directives for Nginx, Apache, Django, and Cloudflare.</div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="fw-bold mb-3">Full-Stack Architecture</h4>
+            <div class="table-responsive mb-4">
+                <table class="cl-table">
+                    <thead>
+                        <tr>
+                            <th>Layer</th>
+                            <th>Technology</th>
+                            <th>Role & Implementation Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-navy">Backend Engine</td>
+                            <td>Python 3.13, Django</td>
+                            <td>Modular Django architecture (<code>accounts</code>, <code>scans</code>, <code>scanner</code>, <code>analysis</code>, <code>reports</code>, <code>core</code>).</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-navy">Database</td>
+                            <td>PostgreSQL / SQLite</td>
+                            <td>Full PostgreSQL production support via <code>psycopg2-binary</code> with seamless SQLite zero-config local fallback.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-navy">Scanning & Cryptography</td>
+                            <td><code>requests</code>, <code>dnspython</code>, <code>cryptography</code></td>
+                            <td>Strict SSRF validation, DNS queries (A, AAAA, MX, SPF, DMARC, CAA), and X.509 certificate decoding via OpenSSL/cryptography.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-navy">Report Generation</td>
+                            <td>ReportLab 5.x</td>
+                            <td>Enterprise multi-page PDF generation with dynamic page numbers, header lines, and tabular scorecard summaries.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-navy">Frontend & UX</td>
+                            <td>HTML5, CSS3, JS, Bootstrap 5.3</td>
+                            <td>Custom responsive design system in Deep Navy and Slate Gray, Chart.js analytics, and mobile navigation.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 class="fw-bold mb-3">Safe Scanning & SSRF Defense Policy</h4>
+            <p class="text-muted">
+                CyberLens executes <strong>passive analysis only</strong>. It never sends injection payloads, SQL queries, or brute-force requests.
+                Furthermore, it incorporates multi-layered Server-Side Request Forgery (SSRF) and DNS rebinding protections:
+            </p>
+            <ul class="text-muted small">
+                <li>Enforces <code>http://</code> and <code>https://</code> protocols exclusively; rejects internal protocols like <code>file://</code>, <code>gopher://</code>, or <code>dict://</code>.</li>
+                <li>Pre-resolves hostnames before connecting and validates that every IP is a public, globally-routable address.</li>
+                <li>Strictly blocks RFC 1918 private subnets (<code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>, <code>192.168.0.0/16</code>), loopback (<code>127.0.0.1</code>, <code>::1</code>), link-local, multicast, and cloud metadata (<code>169.254.169.254</code>).</li>
+                <li>Re-verifies destination IP addresses across each HTTP redirection hop (limited to 5 redirects max).</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

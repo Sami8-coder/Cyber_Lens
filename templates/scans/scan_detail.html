@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Audit Report: {{ scan.target_hostname }} — CyberLens{% endblock %}
+
+{% block content %}
+<!-- Executive Scorecard Banner -->
+<div class="cl-card p-4 p-md-5 mb-4 shadow-sm border-0 bg-white">
+    <div class="row align-items-center g-4">
+        <!-- Target Host & Details -->
+        <div class="col-lg-6">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-light text-navy border">
+                    <i class="bi bi-clock me-1"></i> {{ scan.created_at|date:"M d, Y H:i:s" }} UTC
+                </span>
+                <span class="badge bg-light text-muted border">
+                    <i class="bi bi-stopwatch me-1"></i> {{ scan.scan_duration_ms }} ms
+                </span>
+                {% if scan.is_public %}
+                    <span class="badge bg-info-subtle text-info border border-info">Public</span>
+                {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary border">Private</span>
+                {% endif %}
+            </div>
+
+            <h2 class="display-6 fw-bold text-navy mb-1">{{ scan.target_hostname }}</h2>
+            <p class="text-muted small mb-3">
+                <i class="bi bi-link-45deg me-1"></i> <a href="{{ scan.target_url }}" target="_blank" rel="noopener noreferrer" class="text-muted">{{ scan.target_url }}</a>
+                {% if scan.ip_address %}&bull; <span class="font-monospace">IP: {{ scan.ip_address }}</span>{% endif %}
+                {% if scan.http_status_code %}&bull; <span>HTTP {{ scan.http_status_code }}</span>{% endif %}
+            </p>
+
+            <!-- Action Buttons -->
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'reports:download_pdf' scan.scan_uuid %}" class="btn btn-primary-cl btn-sm d-flex align-items-center gap-1">
+                    <i class="bi bi-file-earmark-pdf-fill"></i> Download PDF Report
+                </a>
+                <a href="{% url 'reports:export_json' scan.scan_uuid %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+                    <i class="bi bi-code-slash"></i> Export JSON
+                </a>
+                <form method="post" action="{% url 'scans:scan_rerun' scan.scan_uuid %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
+                        <i class="bi bi-arrow-repeat"></i> Re-Assess
+                    </button>
+                </form>
+                <a href="{% url 'scans:scan_compare' %}?scan1={{ scan.scan_uuid }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+                    <i class="bi bi-arrow-left-right"></i> Compare
+                </a>
+            </div>
+        </div>
+
+        <!-- Grade & Overall Score Gauge -->
+        <div class="col-lg-6">
+            <div class="p-4 rounded-4 bg-light border d-flex flex-column flex-sm-row align-items-center justify-content-around text-center gap-4">
+                <!-- Score Number -->
+                <div>
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Posture Score</div>
+                    <div class="display-4 fw-bold text-navy mb-0">
+                        {{ scan.overall_score }}<span class="fs-4 text-muted">/100</span>
+                    </div>
+                    <span class="badge {{ scan.risk_badge_class }} px-3 py-1 mt-1">{{ scan.risk_level }} Risk</span>
+                </div>
+
+                <!-- Letter Grade Badge -->
+                <div>
+                    <div class="text-muted small text-uppercase fw-bold mb-2">Posture Grade</div>
+                    <div class="badge-grade badge-grade-hero {{ scan.grade_badge_class }}">
+                        {{ scan.grade }}
+                    </div>
+                </div>
+
+                <!-- Pass Rate -->
+                <div class="d-none d-md-block">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Pass Rate</div>
+                    <div class="h3 fw-bold text-success mb-0">{{ pass_rate }}%</div>
+                    <small class="text-muted">{{ severity_counts.pass }} of {{ findings.count }} passed</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Scores Grid -->
+<div class="row g-3 mb-4">
+    <!-- TLS / SSL -->
+    <div class="col-sm-6 col-lg">
+        <div class="cl-card p-3 h-100">
+            <div class="text-muted small fw-semibold mb-1"><i class="bi bi-lock-fill text-primary me-1"></i> TLS / SSL</div>
+            <div class="d-flex justify-content-between align-items-baseline">
+                <span class="h4 fw-bold mb-0 text-navy">{{ scan.category_scores.ssl|default:0 }}</span>
+                <span class="text-muted small">/100</span>
+            </div>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar {% if scan.category_scores.ssl >= 80 %}bg-success{% elif scan.category_scores.ssl >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ scan.category_scores.ssl|default:0 }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Headers -->
+    <div class="col-sm-6 col-lg">
+        <div class="cl-card p-3 h-100">
+            <div class="text-muted small fw-semibold mb-1"><i class="bi bi-shield-shaded text-primary me-1"></i> Headers</div>
+            <div class="d-flex justify-content-between align-items-baseline">
+                <span class="h4 fw-bold mb-0 text-navy">{{ scan.category_scores.headers|default:0 }}</span>
+                <span class="text-muted small">/100</span>
+            </div>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar {% if scan.category_scores.headers >= 80 %}bg-success{% elif scan.category_scores.headers >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ scan.category_scores.headers|default:0 }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie Defense -->
+    <div class="col-sm-6 col-lg">
+        <div class="cl-card p-3 h-100">
+            <div class="text-muted small fw-semibold mb-1"><i class="bi bi-cookie text-primary me-1"></i> Cookies</div>
+            <div class="d-flex justify-content-between align-items-baseline">
+                <span class="h4 fw-bold mb-0 text-navy">{{ scan.category_scores.cookies|default:0 }}</span>
+                <span class="text-muted small">/100</span>
+            </div>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar {% if scan.category_scores.cookies >= 80 %}bg-success{% elif scan.category_scores.cookies >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ scan.category_scores.cookies|default:0 }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DNS & Email -->
+    <div class="col-sm-6 col-lg">
+        <div class="cl-card p-3 h-100">
+            <div class="text-muted small fw-semibold mb-1"><i class="bi bi-envelope-shield text-primary me-1"></i> DNS & Email</div>
+            <div class="d-flex justify-content-between align-items-baseline">
+                <span class="h4 fw-bold mb-0 text-navy">{{ scan.category_scores.dns|default:0 }}</span>
+                <span class="text-muted small">/100</span>
+            </div>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar {% if scan.category_scores.dns >= 80 %}bg-success{% elif scan.category_scores.dns >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ scan.category_scores.dns|default:0 }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Infrastructure -->
+    <div class="col-sm-6 col-lg">
+        <div class="cl-card p-3 h-100">
+            <div class="text-muted small fw-semibold mb-1"><i class="bi bi-hdd-network text-primary me-1"></i> Infrastructure</div>
+            <div class="d-flex justify-content-between align-items-baseline">
+                <span class="h4 fw-bold mb-0 text-navy">{{ scan.category_scores.infrastructure|default:0 }}</span>
+                <span class="text-muted small">/100</span>
+            </div>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar {% if scan.category_scores.infrastructure >= 80 %}bg-success{% elif scan.category_scores.infrastructure >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ scan.category_scores.infrastructure|default:0 }}%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Tabs for Detailed Audit Data -->
+<ul class="nav nav-tabs border-bottom mb-4" id="scanTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold text-navy" id="findings-tab" data-bs-toggle="tab" data-bs-target="#findings-pane" type="button" role="tab">
+            <i class="bi bi-list-check me-1"></i> Explainable Findings ({{ findings.count }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold text-navy" id="headers-tab" data-bs-toggle="tab" data-bs-target="#headers-pane" type="button" role="tab">
+            <i class="bi bi-file-code me-1"></i> HTTP Headers
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold text-navy" id="tls-tab" data-bs-toggle="tab" data-bs-target="#tls-pane" type="button" role="tab">
+            <i class="bi bi-shield-lock me-1"></i> TLS Certificate
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold text-navy" id="dns-tab" data-bs-toggle="tab" data-bs-target="#dns-pane" type="button" role="tab">
+            <i class="bi bi-diagram-3 me-1"></i> DNS & Email Defense
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold text-navy" id="cookies-tab" data-bs-toggle="tab" data-bs-target="#cookies-pane" type="button" role="tab">
+            <i class="bi bi-cookie me-1"></i> Cookies Audit
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="scanTabsContent">
+    <!-- TAB 1: Explainable Findings & Remediation -->
+    <div class="tab-pane fade show active" id="findings-pane" role="tabpanel">
+        <!-- Findings Filter Bar -->
+        <div class="cl-card p-3 mb-4 bg-light border">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex flex-wrap gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-dark active" data-finding-filter="all">
+                        All Findings ({{ findings.count }})
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-finding-filter="failures">
+                        Failures ({{ findings.count|add:"-"|add:severity_counts.pass }})
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" data-finding-filter="passed">
+                        Passed Checks ({{ severity_counts.pass }})
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-finding-filter="critical">
+                        Critical ({{ severity_counts.critical }})
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-finding-filter="high">
+                        High ({{ severity_counts.high }})
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-finding-filter="medium">
+                        Medium ({{ severity_counts.medium }})
+                    </button>
+                </div>
+                <div class="small text-muted">
+                    Showing <strong id="visibleFindingsCount">{{ findings.count }}</strong> items
+                </div>
+            </div>
+        </div>
+
+        <!-- Finding Cards List -->
+        <div class="findings-list d-flex flex-column gap-3 mb-4">
+            {% for finding in findings %}
+            <div class="cl-card finding-card {% if finding.status == 'fail' %}border-start border-4 border-danger{% elif finding.status == 'warning' %}border-start border-4 border-warning{% else %}border-start border-4 border-success{% endif %}"
+                 data-severity="{{ finding.severity|lower }}"
+                 data-category="{{ finding.category }}"
+                 data-status="{{ finding.status }}">
+                <div class="cl-card-header bg-white py-3">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 w-100">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge-severity {{ finding.severity_badge_class }}">
+                                {% if finding.status == 'pass' %}<i class="bi bi-check-circle-fill"></i>
+                                {% elif finding.severity == 'critical' %}<i class="bi bi-exclamation-octagon-fill"></i>
+                                {% elif finding.severity == 'high' %}<i class="bi bi-exclamation-triangle-fill"></i>
+                                {% else %}<i class="bi bi-info-circle-fill"></i>{% endif %}
+                                {{ finding.get_severity_display }}
+                            </span>
+                            <h5 class="mb-0 fw-bold text-navy">{{ finding.title }}</h5>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-light text-navy border small">{{ finding.get_category_display }}</span>
+                            {% if finding.score_impact != 0 %}
+                                <span class="badge bg-danger-subtle text-danger font-monospace">{{ finding.score_impact }} pts</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cl-card-body">
+                    <!-- Standard References -->
+                    <div class="d-flex flex-wrap gap-2 mb-3 small">
+                        {% if finding.owasp_category %}
+                            <span class="badge bg-light text-secondary border"><i class="bi bi-tag-fill me-1"></i> OWASP: {{ finding.owasp_category }}</span>
+                        {% endif %}
+                        {% if finding.cwe_id %}
+                            <span class="badge bg-light text-secondary border"><i class="bi bi-shield me-1"></i> {{ finding.cwe_id }}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Explainable Findings Columns: Detection & Impact -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 h-100">
+                                <div class="fw-bold text-navy small mb-1"><i class="bi bi-eye text-primary me-1"></i> What was detected?</div>
+                                <p class="text-muted small mb-0">{{ finding.description }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 h-100">
+                                <div class="fw-bold text-navy small mb-1"><i class="bi bi-exclamation-triangle text-danger me-1"></i> Why it matters (Threat Context)</div>
+                                <p class="text-muted small mb-0">{{ finding.impact }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Remediation Guidance -->
+                    <div class="mb-3">
+                        <div class="fw-bold text-navy small mb-1"><i class="bi bi-wrench-adjustable-circle text-success me-1"></i> Actionable Remediation</div>
+                        <p class="text-muted small mb-2">{{ finding.remediation }}</p>
+                    </div>
+
+                    <!-- Code Snippets Box -->
+                    {% if finding.remediation_code %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-semibold text-navy"><i class="bi bi-code-slash text-primary me-1"></i> Recommended Configuration Directive</span>
+                        </div>
+                        <div class="remediation-code-box">
+                            <button class="copy-snippet-btn copy-btn" data-target="snippet_{{ finding.id }}"><i class="bi bi-clipboard"></i> Copy</button>
+                            <pre id="snippet_{{ finding.id }}" class="mb-0"><code>{{ finding.remediation_code }}</code></pre>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Technical Evidence -->
+                    {% if finding.evidence %}
+                    <div class="pt-2 border-top">
+                        <a class="text-decoration-none small text-muted" data-bs-toggle="collapse" href="#evidence_{{ finding.id }}" role="button">
+                            <i class="bi bi-terminal me-1"></i> Toggle Technical Evidence &bull; Observed Attributes
+                        </a>
+                        <div class="collapse mt-2" id="evidence_{{ finding.id }}">
+                            <pre class="bg-light p-2 rounded small text-dark font-monospace mb-0 border"><code>{{ finding.evidence }}</code></pre>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- TAB 2: Raw HTTP Headers -->
+    <div class="tab-pane fade" id="headers-pane" role="tabpanel">
+        <div class="cl-card">
+            <div class="cl-card-header">
+                <h6 class="mb-0 fw-bold">HTTP Response Headers Captured</h6>
+            </div>
+            <div class="cl-card-body">
+                {% if raw_data.headers %}
+                <div class="table-responsive">
+                    <table class="cl-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 250px;">Header Key</th>
+                                <th>Received Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, val in raw_data.headers.items %}
+                            <tr>
+                                <td class="font-monospace text-navy fw-semibold small">{{ key }}</td>
+                                <td class="font-monospace small text-break">{{ val }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">No raw response headers captured.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: TLS/SSL Certificate Inspector -->
+    <div class="tab-pane fade" id="tls-pane" role="tabpanel">
+        <div class="cl-card">
+            <div class="cl-card-header">
+                <h6 class="mb-0 fw-bold">X.509 Cryptographic Certificate Details</h6>
+            </div>
+            <div class="cl-card-body">
+                {% if raw_data.tls_cert.has_tls %}
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="fw-bold text-navy small mb-2">Subject / Target Info</div>
+                            <div class="small text-muted mb-1"><strong>Common Name (CN):</strong> {{ raw_data.tls_cert.subject.commonName|default:"N/A" }}</div>
+                            <div class="small text-muted mb-1"><strong>Organization:</strong> {{ raw_data.tls_cert.subject.organizationName|default:"N/A" }}</div>
+                            <div class="small text-muted"><strong>Serial Number:</strong> {{ raw_data.tls_cert.serial_number }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="fw-bold text-navy small mb-2">Certificate Authority (Issuer)</div>
+                            <div class="small text-muted mb-1"><strong>Issuer CN:</strong> {{ raw_data.tls_cert.issuer.commonName|default:"N/A" }}</div>
+                            <div class="small text-muted mb-1"><strong>Issuer Org:</strong> {{ raw_data.tls_cert.issuer.organizationName|default:"N/A" }}</div>
+                            <div class="small text-muted"><strong>Signature Algorithm:</strong> {{ raw_data.tls_cert.signature_algorithm }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="border p-3 rounded">
+                            <div class="text-muted small">Valid From</div>
+                            <div class="fw-semibold text-navy">{{ raw_data.tls_cert.valid_from }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border p-3 rounded">
+                            <div class="text-muted small">Valid Until</div>
+                            <div class="fw-semibold text-navy">{{ raw_data.tls_cert.valid_until }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border p-3 rounded">
+                            <div class="text-muted small">Days Remaining</div>
+                            <div class="fw-bold fs-5 text-primary">{{ raw_data.tls_cert.days_remaining }} days</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SANs -->
+                {% if raw_data.tls_cert.san %}
+                <div class="mb-3">
+                    <div class="fw-bold text-navy small mb-2">Subject Alternative Names (SANs):</div>
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for san in raw_data.tls_cert.san %}
+                            <span class="badge bg-light text-navy border font-monospace">{{ san }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="pt-3 border-top small text-muted">
+                    <span><strong>Negotiated Protocol:</strong> {{ raw_data.tls_cert.protocol_version }}</span> &bull;
+                    <span><strong>Cipher Suite:</strong> {{ raw_data.tls_cert.cipher_suite }}</span>
+                </div>
+                {% else %}
+                <div class="alert alert-warning mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i> No TLS / HTTPS certificate could be inspected on port 443 for this host.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: DNS & Email Records -->
+    <div class="tab-pane fade" id="dns-pane" role="tabpanel">
+        <div class="cl-card">
+            <div class="cl-card-header">
+                <h6 class="mb-0 fw-bold">DNS & Email Protection Records (SPF, DMARC, CAA)</h6>
+            </div>
+            <div class="cl-card-body">
+                {% if raw_data.dns_records %}
+                <div class="row g-3 mb-4">
+                    <!-- SPF -->
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 border h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-navy small">Sender Policy Framework (SPF)</span>
+                                {% if raw_data.dns_records.spf_valid %}
+                                    <span class="badge bg-success">Configured</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Missing</span>
+                                {% endif %}
+                            </div>
+                            <code class="small text-break">{{ raw_data.dns_records.spf_record|default:"No v=spf1 TXT record found." }}</code>
+                        </div>
+                    </div>
+
+                    <!-- DMARC -->
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 border h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-navy small">DMARC Policy (_dmarc)</span>
+                                {% if raw_data.dns_records.dmarc_valid %}
+                                    <span class="badge bg-success">Policy: {{ raw_data.dns_records.dmarc_policy }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Missing</span>
+                                {% endif %}
+                            </div>
+                            <code class="small text-break">{{ raw_data.dns_records.dmarc_record|default:"No _dmarc TXT record found." }}</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CAA & IPv4/IPv6 Records -->
+                <div class="mb-3">
+                    <div class="fw-bold text-navy small mb-1">A & AAAA Host Records:</div>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% for a in raw_data.dns_records.a_records %}
+                            <span class="badge bg-light text-navy border font-monospace">A: {{ a }}</span>
+                        {% endfor %}
+                        {% for aaaa in raw_data.dns_records.aaaa_records %}
+                            <span class="badge bg-light text-navy border font-monospace">AAAA: {{ aaaa }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- MX Records -->
+                {% if raw_data.dns_records.mx_records %}
+                <div class="mb-3">
+                    <div class="fw-bold text-navy small mb-1">Mail Exchanger (MX) Records:</div>
+                    <ul class="list-unstyled small font-monospace text-muted mb-0">
+                        {% for mx in raw_data.dns_records.mx_records %}
+                            <li>&bull; {{ mx }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- CAA Records -->
+                {% if raw_data.dns_records.caa_records %}
+                <div>
+                    <div class="fw-bold text-navy small mb-1">CAA (Certificate Authority Authorization) Records:</div>
+                    <ul class="list-unstyled small font-monospace text-muted mb-0">
+                        {% for caa in raw_data.dns_records.caa_records %}
+                            <li>&bull; {{ caa }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% else %}
+                <p class="text-muted small mb-0">No DNS records captured.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: Cookies Audit -->
+    <div class="tab-pane fade" id="cookies-pane" role="tabpanel">
+        <div class="cl-card">
+            <div class="cl-card-header">
+                <h6 class="mb-0 fw-bold">Cookies Security & Flags Audit</h6>
+            </div>
+            <div class="cl-card-body">
+                {% if raw_data.cookies %}
+                <div class="table-responsive">
+                    <table class="cl-table">
+                        <thead>
+                            <tr>
+                                <th>Cookie Name</th>
+                                <th>Secure</th>
+                                <th>HttpOnly</th>
+                                <th>SameSite</th>
+                                <th>Domain / Path</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in raw_data.cookies %}
+                            <tr>
+                                <td class="fw-semibold text-navy font-monospace">{{ c.name }}</td>
+                                <td>
+                                    {% if c.secure %}
+                                        <span class="badge bg-success"><i class="bi bi-check-lg"></i> True</span>
+                                    {% else %}
+                                        <span class="badge bg-danger"><i class="bi bi-x-lg"></i> Missing</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if c.httponly %}
+                                        <span class="badge bg-success"><i class="bi bi-check-lg"></i> True</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-x-lg"></i> Missing</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if c.samesite %}
+                                        <span class="badge bg-info text-dark">{{ c.samesite }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Unset</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">{{ c.domain|default:"Host" }} {{ c.path }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted small">
+                    <i class="bi bi-shield-check text-success fs-2 d-block mb-2"></i>
+                    No Set-Cookie headers observed on initial unauthenticated response.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

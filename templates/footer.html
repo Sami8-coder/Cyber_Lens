@@ -1,0 +1,14 @@
+<footer class="mt-auto py-3 bg-white border-top">
+    <div class="container-fluid px-4 d-flex flex-column flex-sm-row align-items-center justify-content-between small text-muted">
+        <div>
+            &copy; {{ CURRENT_YEAR }} <strong>{{ APP_NAME }}</strong> — {{ APP_TAGLINE }} (v{{ APP_VERSION }})
+        </div>
+        <div class="d-flex gap-3 mt-2 mt-sm-0">
+            <a href="{% url 'core:docs' %}" class="text-muted text-decoration-none hover-primary">Documentation</a>
+            <span>&bull;</span>
+            <a href="{% url 'core:about' %}" class="text-muted text-decoration-none hover-primary">Architecture</a>
+            <span>&bull;</span>
+            <span class="text-muted">Safe Passive Auditing</span>
+        </div>
+    </div>
+</footer>

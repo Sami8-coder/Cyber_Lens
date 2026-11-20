@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Report: {{ scan.target_hostname }} — CyberLens Security Audit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Top Toolbar with Print and PDF buttons -->
+        <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+            <a href="{% url 'scans:scan_detail' scan.scan_uuid %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Back to Assessment
+            </a>
+            <div class="d-flex gap-2">
+                <button onclick="window.print()" class="btn btn-outline-dark btn-sm">
+                    <i class="bi bi-printer me-1"></i> Print Report
+                </button>
+                <a href="{% url 'reports:download_pdf' scan.scan_uuid %}" class="btn btn-primary-cl btn-sm">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
+                </a>
+            </div>
+        </div>
+
+        <!-- Printable Document Container -->
+        <div class="cl-card p-4 p-md-5 bg-white shadow-sm" id="printableReport">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+                <div class="d-flex align-items-center gap-3">
+                    <img src="{% static 'img/logo.svg' %}" alt="CyberLens" width="54" height="54">
+                    <div>
+                        <h2 class="fw-bold text-navy mb-0">CyberLens</h2>
+                        <small class="text-muted text-uppercase fw-semibold" style="letter-spacing: 0.05em;">Security Posture Assessment Report</small>
+                    </div>
+                </div>
+                <div class="text-end small text-muted">
+                    <div><strong>Scan ID:</strong> {{ scan.scan_uuid|stringformat:"s"|slice:":8" }}</div>
+                    <div><strong>Date:</strong> {{ scan.created_at|date:"Y-m-d H:i" }} UTC</div>
+                    <div><strong>Status:</strong> <span class="badge bg-success">Verified Complete</span></div>
+                </div>
+            </div>
+
+            <!-- Executive Summary Section -->
+            <div class="p-4 rounded-4 bg-light border mb-4">
+                <div class="row align-items-center text-center text-md-start g-3">
+                    <div class="col-md-5">
+                        <small class="text-muted text-uppercase fw-bold">Target Evaluated</small>
+                        <h4 class="fw-bold text-navy mb-1">{{ scan.target_hostname }}</h4>
+                        <div class="text-muted small">{{ scan.target_url }}</div>
+                        <div class="text-muted small">IP: {{ scan.ip_address|default:"Public Host" }}</div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <small class="text-muted text-uppercase fw-bold">Overall Score</small>
+                        <div class="display-4 fw-bold text-navy">{{ scan.overall_score }}<span class="fs-5 text-muted">/100</span></div>
+                        <span class="badge {{ scan.risk_badge_class }}">{{ scan.risk_level }} Risk</span>
+                    </div>
+                    <div class="col-md-4 text-center text-md-end">
+                        <small class="text-muted text-uppercase fw-bold d-block mb-1">Assigned Grade</small>
+                        <div class="badge-grade badge-grade-lg {{ scan.grade_badge_class }} mx-auto ms-md-auto">
+                            {{ scan.grade }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Breakdown -->
+            <h5 class="fw-bold text-navy mb-3">Domain Category Ratings</h5>
+            <div class="table-responsive mb-4">
+                <table class="cl-table">
+                    <thead>
+                        <tr>
+                            <th>Security Domain</th>
+                            <th>Weight</th>
+                            <th>Calculated Score</th>
+                            <th>Assessment Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>TLS / SSL Cryptography</td>
+                            <td>25%</td>
+                            <td class="font-monospace fw-bold">{{ scan.category_scores.ssl|default:0 }}/100</td>
+                            <td>{% if scan.category_scores.ssl >= 80 %}<span class="text-success fw-bold">Strong</span>{% else %}<span class="text-danger fw-bold">Attention Needed</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td>HTTP Security Headers</td>
+                            <td>35%</td>
+                            <td class="font-monospace fw-bold">{{ scan.category_scores.headers|default:0 }}/100</td>
+                            <td>{% if scan.category_scores.headers >= 80 %}<span class="text-success fw-bold">Strong</span>{% else %}<span class="text-danger fw-bold">Attention Needed</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td>Cookie Protection</td>
+                            <td>15%</td>
+                            <td class="font-monospace fw-bold">{{ scan.category_scores.cookies|default:0 }}/100</td>
+                            <td>{% if scan.category_scores.cookies >= 80 %}<span class="text-success fw-bold">Strong</span>{% else %}<span class="text-danger fw-bold">Attention Needed</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td>DNS & Email Authentication</td>
+                            <td>15%</td>
+                            <td class="font-monospace fw-bold">{{ scan.category_scores.dns|default:0 }}/100</td>
+                            <td>{% if scan.category_scores.dns >= 80 %}<span class="text-success fw-bold">Strong</span>{% else %}<span class="text-danger fw-bold">Attention Needed</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td>Infrastructure & Redirection</td>
+                            <td>10%</td>
+                            <td class="font-monospace fw-bold">{{ scan.category_scores.infrastructure|default:0 }}/100</td>
+                            <td>{% if scan.category_scores.infrastructure >= 80 %}<span class="text-success fw-bold">Strong</span>{% else %}<span class="text-danger fw-bold">Attention Needed</span>{% endif %}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Findings Catalog -->
+            <h5 class="fw-bold text-navy mb-3">Explainable Findings & Remediation</h5>
+            <div class="d-flex flex-column gap-3 mb-4">
+                {% for finding in findings %}
+                <div class="p-3 rounded-3 border {% if finding.status == 'fail' %}bg-danger-subtle bg-opacity-25 border-danger{% elif finding.status == 'warning' %}bg-warning-subtle bg-opacity-25 border-warning{% else %}bg-light{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge-severity {{ finding.severity_badge_class }}">{{ finding.get_severity_display }}</span>
+                            <span class="fw-bold text-navy">{{ finding.title }}</span>
+                        </div>
+                        <span class="small text-muted">{{ finding.get_category_display }}</span>
+                    </div>
+
+                    <div class="small mb-2"><strong>Detection:</strong> {{ finding.description }}</div>
+                    <div class="small text-muted mb-2"><strong>Risk & Impact:</strong> {{ finding.impact }}</div>
+                    <div class="small text-success mb-2"><strong>Remediation:</strong> {{ finding.remediation }}</div>
+
+                    {% if finding.remediation_code %}
+                    <pre class="bg-dark text-light p-2 rounded small font-monospace mb-0 mt-2"><code>{{ finding.remediation_code }}</code></pre>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="pt-3 border-top text-muted" style="font-size: 0.75rem;">
+                <strong>Disclaimer:</strong> This posture assessment was generated automatically by CyberLens using passive, non-intrusive network and HTTP analysis.
+                No active exploitation or penetration testing was conducted.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+@media print {
+    .no-print, .app-sidebar, .app-header, footer {
+        display: none !important;
+    }
+    .app-main {
+        margin-left: 0 !important;
+    }
+    .app-content {
+        padding: 0 !important;
+    }
+    #printableReport {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+}
+</style>
+{% endblock %}

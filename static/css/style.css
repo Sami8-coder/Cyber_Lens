@@ -1,0 +1,522 @@
+/* ==========================================================================
+   CyberLens — Explainable Web Security Posture Assessment Platform
+   Design System & Styling Architecture
+   Theme: Deep Navy, Modern SaaS, White, Light Gray, Cyber Accent
+   ========================================================================== */
+
+:root {
+    --cl-navy-900: #0B192C;
+    --cl-navy-800: #132238;
+    --cl-navy-700: #1E3E62;
+    --cl-navy-600: #264e7c;
+    
+    --cl-primary: #0284C7;
+    --cl-primary-hover: #0369A1;
+    --cl-primary-light: #E0F2FE;
+    
+    --cl-accent-cyan: #06B6D4;
+    --cl-accent-cyan-light: #CFFAFE;
+    
+    --cl-slate-50: #F8FAFC;
+    --cl-slate-100: #F1F5F9;
+    --cl-slate-200: #E2E8F0;
+    --cl-slate-300: #CBD5E1;
+    --cl-slate-400: #94A3B8;
+    --cl-slate-500: #64748B;
+    --cl-slate-600: #475569;
+    --cl-slate-700: #334155;
+    --cl-slate-800: #1E293B;
+    --cl-slate-900: #0F172A;
+
+    --cl-success: #16A34A;
+    --cl-success-light: #DCFCE7;
+    --cl-warning: #D97706;
+    --cl-warning-light: #FEF3C7;
+    --cl-danger: #DC2626;
+    --cl-danger-light: #FEE2E2;
+    --cl-critical: #991B1B;
+    --cl-critical-light: #FEE2E2;
+
+    --cl-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --cl-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+    --cl-radius-sm: 6px;
+    --cl-radius-md: 10px;
+    --cl-radius-lg: 14px;
+    --cl-radius-xl: 18px;
+
+    --cl-shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --cl-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+    --cl-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+    --cl-shadow-hover: 0 14px 25px -4px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+
+    --sidebar-width: 260px;
+    --header-height: 64px;
+}
+
+body {
+    font-family: var(--cl-font-sans);
+    color: var(--cl-slate-800);
+    background-color: var(--cl-slate-50);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   Typography & Basic Elements
+   ========================================================================== */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--cl-navy-900);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+a {
+    color: var(--cl-primary);
+    text-decoration: none;
+    transition: color 0.15s ease-in-out;
+}
+a:hover {
+    color: var(--cl-primary-hover);
+}
+
+.text-navy {
+    color: var(--cl-navy-900) !important;
+}
+
+.bg-navy {
+    background-color: var(--cl-navy-900) !important;
+    color: #ffffff;
+}
+
+.bg-navy-darker {
+    background-color: #07101C !important;
+    color: #ffffff;
+}
+
+.btn-primary-cl {
+    background-color: var(--cl-navy-900);
+    border-color: var(--cl-navy-900);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.55rem 1.25rem;
+    border-radius: var(--cl-radius-md);
+    transition: all 0.2s ease;
+}
+.btn-primary-cl:hover {
+    background-color: var(--cl-navy-700);
+    border-color: var(--cl-navy-700);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: var(--cl-shadow-md);
+}
+
+.btn-accent {
+    background-color: var(--cl-primary);
+    border-color: var(--cl-primary);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.55rem 1.25rem;
+    border-radius: var(--cl-radius-md);
+    transition: all 0.2s ease;
+}
+.btn-accent:hover {
+    background-color: var(--cl-primary-hover);
+    border-color: var(--cl-primary-hover);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: var(--cl-shadow-md);
+}
+
+/* ==========================================================================
+   Layout Architecture: App Shell
+   ========================================================================== */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.app-sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--cl-navy-900);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-sidebar .sidebar-brand {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-sidebar .nav-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cl-slate-400);
+    padding: 1.25rem 1.5rem 0.5rem;
+}
+
+.app-sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1.5rem;
+    color: #94A3B8;
+    font-weight: 500;
+    font-size: 0.92rem;
+    border-radius: 0;
+    transition: all 0.15s ease;
+    border-left: 3px solid transparent;
+}
+
+.app-sidebar .nav-link:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.app-sidebar .nav-link.active {
+    color: #ffffff;
+    background-color: rgba(2, 132, 199, 0.15);
+    border-left-color: var(--cl-accent-cyan);
+    font-weight: 600;
+}
+
+.app-sidebar .sidebar-footer {
+    margin-top: auto;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Main Area */
+.app-main {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* Header */
+.app-header {
+    height: var(--header-height);
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--cl-slate-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 990;
+    box-shadow: var(--cl-shadow-sm);
+}
+
+.app-content {
+    flex: 1;
+    padding: 2rem;
+}
+
+/* Public Pages Shell (Home, About, Docs) */
+.public-navbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--cl-slate-200);
+    box-shadow: var(--cl-shadow-sm);
+}
+
+/* ==========================================================================
+   Card System
+   ========================================================================== */
+.cl-card {
+    background-color: #ffffff;
+    border-radius: var(--cl-radius-lg);
+    border: 1px solid var(--cl-slate-200);
+    box-shadow: var(--cl-shadow-sm);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    overflow: hidden;
+}
+
+.cl-card:hover {
+    box-shadow: var(--cl-shadow-md);
+    border-color: var(--cl-slate-300);
+}
+
+.cl-card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--cl-slate-200);
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cl-card-body {
+    padding: 1.5rem;
+}
+
+.cl-card-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--cl-slate-200);
+    background-color: var(--cl-slate-50);
+}
+
+/* Metric Cards */
+.cl-metric-card {
+    background-color: #ffffff;
+    border-radius: var(--cl-radius-lg);
+    border: 1px solid var(--cl-slate-200);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--cl-shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.metric-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--cl-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Security Grade Badges
+   ========================================================================== */
+.badge-grade {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    border-radius: var(--cl-radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-grade-sm {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+}
+
+.badge-grade-lg {
+    width: 72px;
+    height: 72px;
+    font-size: 2rem;
+    border-radius: var(--cl-radius-lg);
+}
+
+.badge-grade-hero {
+    width: 100px;
+    height: 100px;
+    font-size: 3rem;
+    border-radius: var(--cl-radius-xl);
+    box-shadow: var(--cl-shadow-md);
+}
+
+.badge-grade-aplus,
+.badge-grade-a {
+    background-color: var(--cl-success-light);
+    color: #15803D;
+    border: 1px solid #BBF7D0;
+}
+
+.badge-grade-b {
+    background-color: var(--cl-primary-light);
+    color: #0369A1;
+    border: 1px solid #BAE6FD;
+}
+
+.badge-grade-c {
+    background-color: var(--cl-warning-light);
+    color: #B45309;
+    border: 1px solid #FDE68A;
+}
+
+.badge-grade-d {
+    background-color: #FFEDD5;
+    color: #C2410C;
+    border: 1px solid #FED7AA;
+}
+
+.badge-grade-f {
+    background-color: var(--cl-danger-light);
+    color: #B91C1C;
+    border: 1px solid #FECACA;
+}
+
+/* Severity Badges */
+.badge-severity {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.badge-severity-critical {
+    background-color: #FEF2F2;
+    color: #991B1B;
+    border: 1px solid #F87171;
+}
+
+.badge-severity-high {
+    background-color: #FFF7ED;
+    color: #C2410C;
+    border: 1px solid #FDBA74;
+}
+
+.badge-severity-medium {
+    background-color: #FEFCE8;
+    color: #A16207;
+    border: 1px solid #FDE047;
+}
+
+.badge-severity-low {
+    background-color: #F0F9FF;
+    color: #0369A1;
+    border: 1px solid #7DD3FC;
+}
+
+.badge-severity-info {
+    background-color: #EFF6FF;
+    color: #1D4ED8;
+    border: 1px solid #93C5FD;
+}
+
+.badge-severity-pass {
+    background-color: #F0FDF4;
+    color: #15803D;
+    border: 1px solid #86EFAC;
+}
+
+/* ==========================================================================
+   Code Snippets & Technical Evidence
+   ========================================================================== */
+.remediation-code-box {
+    background-color: #0F172A;
+    color: #E2E8F0;
+    border-radius: var(--cl-radius-md);
+    padding: 1rem;
+    font-family: var(--cl-font-mono);
+    font-size: 0.85rem;
+    position: relative;
+    overflow-x: auto;
+}
+
+.copy-snippet-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.copy-snippet-btn:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+.cl-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.cl-table th {
+    background-color: var(--cl-slate-50);
+    color: var(--cl-slate-600);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--cl-slate-200);
+}
+
+.cl-table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--cl-slate-200);
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+.cl-table tbody tr:hover {
+    background-color: rgba(248, 250, 252, 0.8);
+}
+
+/* ==========================================================================
+   Hero & Marketing Elements
+   ========================================================================== */
+.hero-section {
+    background: linear-gradient(180deg, #0B192C 0%, #132742 100%);
+    color: #ffffff;
+    padding: 5rem 0 4rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-grid-pattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+@media (max-width: 991.98px) {
+    .app-sidebar {
+        transform: translateX(-100%);
+    }
+    .app-sidebar.show {
+        transform: translateX(0);
+    }
+    .app-main {
+        margin-left: 0;
+    }
+    .app-header {
+        padding: 0 1rem;
+    }
+    .app-content {
+        padding: 1rem;
+    }
+}

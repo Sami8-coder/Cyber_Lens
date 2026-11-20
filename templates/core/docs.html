@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Methodology & Security Knowledge Base — CyberLens{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Table of Contents Sidebar -->
+    <div class="col-lg-3 d-none d-lg-block">
+        <div class="cl-card p-3 sticky-top" style="top: 80px;">
+            <div class="fw-bold text-navy small text-uppercase mb-2">Documentation</div>
+            <nav class="nav flex-column small">
+                <a class="nav-link py-1 text-muted" href="#scoring-formula">1. Scoring Formula & Weights</a>
+                <a class="nav-link py-1 text-muted" href="#headers-section">2. HTTP Security Headers</a>
+                <a class="nav-link py-1 text-muted" href="#tls-section">3. TLS / SSL Cryptography</a>
+                <a class="nav-link py-1 text-muted" href="#cookies-section">4. Cookie Protection Flags</a>
+                <a class="nav-link py-1 text-muted" href="#dns-section">5. DNS & Email Authentication</a>
+                <a class="nav-link py-1 text-muted" href="#ssrf-section">6. SSRF Safety Policy</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Docs Content -->
+    <div class="col-lg-9">
+        <div class="cl-card p-4 p-md-5 mb-4">
+            <h2 class="fw-bold mb-3">CyberLens Security Assessment Methodology</h2>
+            <p class="text-muted">
+                This guide provides complete technical documentation of the passive checks, scoring weighting algorithm,
+                and industry reference standards applied by CyberLens.
+            </p>
+
+            <hr class="my-4">
+
+            <!-- 1. Scoring Formula -->
+            <section id="scoring-formula" class="mb-5">
+                <h4 class="fw-bold text-navy mb-3">1. Scoring Formula & Category Weights</h4>
+                <p class="text-muted">
+                    The overall posture score (0–100) is a composite index computed by evaluating five distinct defensive domains.
+                    Each category starts at 100 points, applies deductions for missing or improperly configured controls, and is combined
+                    according to its weighted contribution:
+                </p>
+                <div class="bg-light p-3 rounded-3 border mb-3">
+                    <code class="text-navy fw-bold">
+                        Overall Score = (Headers × 0.35) + (TLS × 0.25) + (Cookies × 0.15) + (DNS/Email × 0.15) + (Infrastructure × 0.10)
+                    </code>
+                </div>
+                <div class="table-responsive">
+                    <table class="cl-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Weight</th>
+                                <th>Key Evaluated Controls</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">HTTP Security Headers</td>
+                                <td>35%</td>
+                                <td>HSTS (max-age, preload), CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, COOP, CORP.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">TLS / SSL Cryptography</td>
+                                <td>25%</td>
+                                <td>Certificate validity, days remaining, CA trustworthiness, self-signed detection, signature algorithms, TLSv1.2/1.3.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Cookie Protection</td>
+                                <td>15%</td>
+                                <td><code>Secure</code> flag, <code>HttpOnly</code> attribute, and <code>SameSite</code> (Strict/Lax/None) settings.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">DNS & Email Authentication</td>
+                                <td>15%</td>
+                                <td>SPF records in TXT, DMARC policy at <code>_dmarc</code> (none vs quarantine vs reject), CAA authorization, DNSSEC.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Infrastructure Exposure</td>
+                                <td>10%</td>
+                                <td>Automatic HTTP (port 80) to HTTPS redirection and masking of Server / X-Powered-By software banners.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 2. HTTP Security Headers -->
+            <section id="headers-section" class="mb-5">
+                <h4 class="fw-bold text-navy mb-3">2. HTTP Security Headers</h4>
+                <div class="accordion" id="headersAccordion">
+                    <div class="accordion-item mb-2 border rounded-3">
+                        <h2 class="accordion-header" id="headingHSTS">
+                            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHSTS">
+                                Strict-Transport-Security (HSTS) &bull; CWE-319
+                            </button>
+                        </h2>
+                        <div id="collapseHSTS" class="accordion-collapse collapse">
+                            <div class="accordion-body text-muted small">
+                                Forces browsers to communicate exclusively over HTTPS. Protects against SSL-stripping and man-in-the-middle attacks.
+                                Recommended value: <code>max-age=31536000; includeSubDomains; preload</code>.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item mb-2 border rounded-3">
+                        <h2 class="accordion-header" id="headingCSP">
+                            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCSP">
+                                Content-Security-Policy (CSP) &bull; CWE-1021
+                            </button>
+                        </h2>
+                        <div id="collapseCSP" class="accordion-collapse collapse">
+                            <div class="accordion-body text-muted small">
+                                Restricts domains from which scripts, styles, images, and frames can load. Primary defense against Cross-Site Scripting (XSS) and data injection.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item mb-2 border rounded-3">
+                        <h2 class="accordion-header" id="headingXFO">
+                            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseXFO">
+                                X-Frame-Options (Clickjacking) &bull; CWE-1021
+                            </button>
+                        </h2>
+                        <div id="collapseXFO" class="accordion-collapse collapse">
+                            <div class="accordion-body text-muted small">
+                                Prevents malicious websites from rendering your web application inside invisible or transparent iframes to trick users into unintentional clicks.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. TLS / SSL -->
+            <section id="tls-section" class="mb-5">
+                <h4 class="fw-bold text-navy mb-3">3. TLS / SSL Cryptography</h4>
+                <p class="text-muted small">
+                    CyberLens establishes a secure socket connection and inspects the peer certificate chain using native Python <code>ssl</code> and <code>cryptography</code>:
+                </p>
+                <ul class="text-muted small">
+                    <li><strong>Expiration Horizon:</strong> Warns when certificates have less than 30 days of validity remaining.</li>
+                    <li><strong>Cryptographic Signature:</strong> Verifies modern hash functions (e.g. SHA-256 with RSA/ECDSA) and flags obsolete SHA-1 or MD5 algorithms.</li>
+                    <li><strong>Protocol Negotiation:</strong> Enforces modern TLSv1.2 or TLSv1.3 and flags legacy TLSv1.0 or TLSv1.1 handshakes.</li>
+                </ul>
+            </section>
+
+            <!-- 4. Cookie Protection -->
+            <section id="cookies-section" class="mb-5">
+                <h4 class="fw-bold text-navy mb-3">4. Cookie Protection Flags</h4>
+                <p class="text-muted small">
+                    Cookies are audited for three vital defensive flags:
+                </p>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="border p-3 rounded bg-light">
+                            <strong>Secure Flag</strong>
+                            <p class="text-muted small mb-0 mt-1">Prevents cookies from ever being transmitted across unencrypted HTTP connections.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border p-3 rounded bg-light">
+                            <strong>HttpOnly Flag</strong>
+                            <p class="text-muted small mb-0 mt-1">Blocks client-side JavaScript access via <code>document.cookie</code>, mitigating session theft via XSS.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border p-3 rounded bg-light">
+                            <strong>SameSite Attribute</strong>
+                            <p class="text-muted small mb-0 mt-1">Restricts cookie transmission in cross-site requests, mitigating Cross-Site Request Forgery (CSRF).</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. DNS & Email -->
+            <section id="dns-section" class="mb-5">
+                <h4 class="fw-bold text-navy mb-3">5. DNS & Email Authentication</h4>
+                <p class="text-muted small">
+                    Evaluates domain security records using <code>dnspython</code> to prevent domain spoofing and rogue certificate issuance:
+                </p>
+                <ul class="text-muted small">
+                    <li><strong>SPF (Sender Policy Framework):</strong> Ensures only authorized mail servers can send email using the domain name.</li>
+                    <li><strong>DMARC:</strong> Verifies published email handling policies (<code>p=reject</code> or <code>p=quarantine</code>) at <code>_dmarc.<domain></code>.</li>
+                    <li><strong>CAA:</strong> Verifies DNS Certification Authority Authorization records to restrict which CAs may issue certificates.</li>
+                    <li><strong>DNSSEC:</strong> Detects cryptographic signing of DNS responses.</li>
+                </ul>
+            </section>
+
+            <!-- 6. SSRF Safety Policy -->
+            <section id="ssrf-section">
+                <h4 class="fw-bold text-navy mb-3">6. Safe Scanning & SSRF Defense Architecture</h4>
+                <p class="text-muted small">
+                    CyberLens is designed exclusively for defense and posture auditing. To prevent abuse, the platform implements strict safety constraints:
+                </p>
+                <div class="p-3 bg-light border-start border-4 border-primary rounded-3 text-muted small">
+                    <strong>Enforced Safeguards:</strong>
+                    <ul class="mb-0 mt-1">
+                        <li>Strict RFC 1918 private IP blocking (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16).</li>
+                        <li>Loopback (127.0.0.1, ::1) and link-local address blocking.</li>
+                        <li>Cloud metadata endpoint blocking (169.254.169.254).</li>
+                        <li>Max 5 HTTP redirects followed, with IP re-validation at each hop.</li>
+                        <li>Zero offensive exploitation or fuzzing payloads.</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

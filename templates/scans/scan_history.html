@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Security Assessment History — CyberLens{% endblock %}
+
+{% block content %}
+<div class="cl-card mb-4">
+    <div class="cl-card-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h5 class="mb-0 fw-bold text-navy">Security Assessment Records</h5>
+            <small class="text-muted">Total {{ total_scans_count }} assessments recorded in database</small>
+        </div>
+        <a href="{% url 'scans:new_scan' %}" class="btn btn-primary-cl btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> New Assessment
+        </a>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="p-3 bg-light border-bottom">
+        <form method="get" action="{% url 'scans:scan_history' %}" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Search target host or URL..." value="{{ query }}">
+                </div>
+            </div>
+
+            <div class="col-sm-3 col-md-2">
+                <select name="grade" class="form-select form-select-sm">
+                    <option value="">All Grades</option>
+                    <option value="A+" {% if selected_grade == 'A+' %}selected{% endif %}>Grade A+</option>
+                    <option value="A" {% if selected_grade == 'A' %}selected{% endif %}>Grade A</option>
+                    <option value="B" {% if selected_grade == 'B' %}selected{% endif %}>Grade B</option>
+                    <option value="C" {% if selected_grade == 'C' %}selected{% endif %}>Grade C</option>
+                    <option value="D" {% if selected_grade == 'D' %}selected{% endif %}>Grade D</option>
+                    <option value="F" {% if selected_grade == 'F' %}selected{% endif %}>Grade F</option>
+                </select>
+            </div>
+
+            <div class="col-sm-3 col-md-2">
+                <select name="risk" class="form-select form-select-sm">
+                    <option value="">All Risk Levels</option>
+                    <option value="Secure" {% if selected_risk == 'Secure' %}selected{% endif %}>Secure</option>
+                    <option value="Low" {% if selected_risk == 'Low' %}selected{% endif %}>Low</option>
+                    <option value="Medium" {% if selected_risk == 'Medium' %}selected{% endif %}>Medium</option>
+                    <option value="High" {% if selected_risk == 'High' %}selected{% endif %}>High</option>
+                    <option value="Critical" {% if selected_risk == 'Critical' %}selected{% endif %}>Critical</option>
+                </select>
+            </div>
+
+            <div class="col-sm-3 col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="failed" {% if selected_status == 'failed' %}selected{% endif %}>Failed</option>
+                    <option value="running" {% if selected_status == 'running' %}selected{% endif %}>Running</option>
+                </select>
+            </div>
+
+            <div class="col-sm-3 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-navy btn-sm flex-grow-1">Filter</button>
+                {% if query or selected_grade or selected_risk or selected_status %}
+                    <a href="{% url 'scans:scan_history' %}" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Scans Table -->
+    <div class="table-responsive">
+        {% if page_obj %}
+        <table class="cl-table">
+            <thead>
+                <tr>
+                    <th>Target Host</th>
+                    <th>Score</th>
+                    <th>Grade</th>
+                    <th>Risk Level</th>
+                    <th>Duration</th>
+                    <th>Date &bull; Time</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for scan in page_obj %}
+                <tr>
+                    <td>
+                        <a href="{% url 'scans:scan_detail' scan.scan_uuid %}" class="fw-semibold text-navy">
+                            {{ scan.target_hostname }}
+                        </a>
+                        <div class="text-muted small">{{ scan.target_url|truncatechars:45 }}</div>
+                    </td>
+                    <td>
+                        {% if scan.status == 'completed' %}
+                            <span class="fw-bold">{{ scan.overall_score }}</span><span class="text-muted small">/100</span>
+                        {% else %}
+                            <span class="text-muted font-monospace small">--</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if scan.status == 'completed' %}
+                            <span class="badge-grade badge-grade-sm {{ scan.grade_badge_class }}">{{ scan.grade }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ scan.status|title }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if scan.status == 'completed' %}
+                            <span class="badge {{ scan.risk_badge_class }}">{{ scan.risk_level }}</span>
+                        {% else %}
+                            <span class="badge bg-danger">{{ scan.error_message|truncatechars:20 }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="text-muted small">{{ scan.scan_duration_ms }} ms</span>
+                    </td>
+                    <td>
+                        <span class="text-muted small">{{ scan.created_at|date:"M d, Y H:i" }}</span>
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'scans:scan_detail' scan.scan_uuid %}" class="btn btn-outline-primary" title="View Results">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'reports:download_pdf' scan.scan_uuid %}" class="btn btn-outline-secondary" title="PDF Report">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                            </a>
+                            {% if user.is_authenticated and scan.user == user or user.is_staff %}
+                            <form method="post" action="{% url 'scans:scan_delete' scan.scan_uuid %}" class="d-inline" onsubmit="return confirm('Delete this scan record permanently?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+            <i class="bi bi-search fs-1 mb-3 d-block text-muted"></i>
+            <h6>No Assessment Records Matched</h6>
+            <p class="small mb-3">Adjust your search terms or launch a new security posture scan.</p>
+            <a href="{% url 'scans:new_scan' %}" class="btn btn-primary-cl btn-sm">Launch New Scan</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="cl-card-footer d-flex justify-content-between align-items-center">
+        <small class="text-muted">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </small>
+        <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_grade %}&grade={{ selected_grade }}{% endif %}">Previous</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if selected_grade %}&grade={{ selected_grade }}{% endif %}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_grade %}&grade={{ selected_grade }}{% endif %}">Next</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

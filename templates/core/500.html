@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}500 - Internal Server Error — CyberLens{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 text-center">
+        <div class="cl-card p-5">
+            <div class="display-1 fw-bold text-danger mb-3">500</div>
+            <h3 class="fw-bold mb-2">Unexpected Assessment Error</h3>
+            <p class="text-muted mb-4">
+                The CyberLens assessment engine encountered an unexpected internal error while processing this request.
+            </p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'dashboard:index' %}" class="btn btn-primary-cl">Return to Dashboard</a>
+                <a href="{% url 'scans:new_scan' %}" class="btn btn-outline-secondary">New Assessment</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
